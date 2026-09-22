@@ -6,12 +6,15 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { LoggerModule } from 'nestjs-pino';
 
-import { randomUUID } from 'crypto';
-
 import { getDatabaseConfig } from './config/database.config';
 
 import { OrdersModule } from './orders/orders.module';
-import { AuthModule } from './auth/auth.module';
+
+import { MessagingModule } from './messaging/messaging.module';
+
+import { OrderCreatedConsumer } from './orders/consumers/order-created.consumer';
+
+import { RetryPolicy } from './orders/domain/retry-policy';
 
 @Module({
   imports: [
@@ -19,20 +22,7 @@ import { AuthModule } from './auth/auth.module';
       isGlobal: true,
     }),
 
-    LoggerModule.forRoot({
-      pinoHttp: {
-        genReqId(request, response) {
-          const header = request.headers['x-correlation-id'];
-
-          const correlationId =
-            typeof header === 'string' ? header : randomUUID();
-
-          response.setHeader('x-correlation-id', correlationId);
-
-          return correlationId;
-        },
-      },
-    }),
+    LoggerModule.forRoot(),
 
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
@@ -40,9 +30,11 @@ import { AuthModule } from './auth/auth.module';
       useFactory: (config: ConfigService) => getDatabaseConfig(config),
     }),
 
-    OrdersModule,
+    MessagingModule,
 
-    AuthModule,
+    OrdersModule,
   ],
+
+  providers: [OrderCreatedConsumer, RetryPolicy],
 })
-export class AppModule {}
+export class WorkerModule {}
