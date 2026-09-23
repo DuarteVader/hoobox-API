@@ -11,7 +11,7 @@ services:
       MYSQL_PASSWORD: orders_password
 
     ports:
-      - "3306:3306"
+      - '3306:3306'
 
     volumes:
       - mysql_data:/var/lib/mysql
@@ -19,18 +19,13 @@ services:
     healthcheck:
       test:
         [
-          "CMD",
-          "mysqladmin",
-          "ping",
-          "-h",
-          "localhost",
-          "-u",
-          "root",
-          "-proot"
+          'CMD-SHELL',
+          'mysqladmin --protocol=tcp ping -h 127.0.0.1 -P 3306 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent',
         ]
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 20
+      start_period: 10s
 
   rabbitmq:
     image: rabbitmq:4-management
@@ -42,11 +37,98 @@ services:
       RABBITMQ_DEFAULT_PASS: orders_password
 
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - '5672:5672'
+      - '15672:15672'
 
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'rabbitmq-diagnostics',
+          '-q',
+          'ping',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  migration:
+    build: .
+
+    command: npm run migration:run:prod
+
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USERNAME: orders_user
+      DB_PASSWORD: orders_password
+      DB_DATABASE: orders
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  api:
+    build: .
+
+    command: npm run start:prod
+
+    environment:
+      PORT: 3000
+
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USERNAME: orders_user
+      DB_PASSWORD: orders_password
+      DB_DATABASE: orders
+
+      RABBITMQ_URL: amqp://orders_user:orders_password@rabbitmq:5672
+
+      JWT_SECRET: local-development-secret
+
+      DEMO_USER: admin
+      DEMO_PASSWORD: admin123
+
+      ORDER_PROCESSING_DELAY_MS: 1500
+
+    ports:
+      - '3000:3000'
+
+    depends_on:
+      migration:
+        condition: service_completed_successfully
+
+      rabbitmq:
+        condition: service_healthy
+
+  worker:
+    build: .
+
+    command: npm run start:worker:prod
+
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USERNAME: orders_user
+      DB_PASSWORD: orders_password
+      DB_DATABASE: orders
+
+      RABBITMQ_URL: amqp://orders_user:orders_password@rabbitmq:5672
+
+      JWT_SECRET: local-development-secret
+
+      ORDER_PROCESSING_DELAY_MS: 1500
+
+    depends_on:
+      migration:
+        condition: service_completed_successfully
+
+      rabbitmq:
+        condition: service_healthy
 
 volumes:
   mysql_data:

@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { Order } from './entities/order.entity';
@@ -7,6 +6,7 @@ import { OrderItem } from './entities/order-item.entity';
 
 import { ProductsModule } from '../products/products.module';
 import { MessagingModule } from '../messaging/messaging.module';
+import { AuthModule } from '../auth/auth.module';
 
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
@@ -20,6 +20,8 @@ import { OrderEventsPublisher } from './events/order-events.publisher';
     ProductsModule,
 
     MessagingModule,
+
+    AuthModule,
   ],
 
   controllers: [OrdersController],
