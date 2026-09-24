@@ -348,8 +348,6 @@ Pedido B = FAILED
 Estoque final = 1
 ```
 
-A ordem de aquisição dos locks de produtos é determinística para reduzir o risco de deadlocks em pedidos com múltiplos produtos.
-
 Itens repetidos do mesmo produto dentro do pedido também são agrupados antes da verificação do estoque.
 
 ---
