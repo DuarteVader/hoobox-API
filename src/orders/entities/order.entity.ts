@@ -8,6 +8,8 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
+import type { Relation } from 'typeorm';
+
 import { OrderItem } from './order-item.entity';
 import { OrderStatus } from '../enums/order-status.enum';
 
@@ -54,7 +56,7 @@ export class Order {
   processedAt: Date | null;
 
   @OneToMany(() => OrderItem, (item) => item.order)
-  items: OrderItem[];
+  items: Relation<OrderItem[]>;
 
   @Index('IDX_orders_created_at')
   @CreateDateColumn({

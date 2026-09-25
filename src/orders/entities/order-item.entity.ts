@@ -7,6 +7,8 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
+import type { Relation } from 'typeorm';
+
 import { Order } from './order.entity';
 import { Product } from '../../products/entities/product.entity';
 
@@ -28,7 +30,7 @@ export class OrderItem {
   @JoinColumn({
     name: 'order_id',
   })
-  order: Order;
+  order: Relation<Order>;
 
   @Column({
     name: 'product_id',
@@ -43,7 +45,7 @@ export class OrderItem {
   @JoinColumn({
     name: 'product_id',
   })
-  product: Product;
+  product: Relation<Product>;
 
   @Column({
     name: 'product_name',
